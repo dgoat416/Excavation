@@ -2,6 +2,8 @@ import java.awt.Point;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -213,8 +215,10 @@ public class Excavation
 	{		
 		int localMax = 0;
 		int globalMax = Integer.MIN_VALUE;
-		int tempLeft = 0;
-		int tempRight = 0;
+		int localTempLeft = 0;
+		int localTempRight = 0;
+		int globalTempLeft = 0;
+		int globalTempRight = 0;
 
 		for(int i = 0; i < oneRow.size(); i++)
 		{
@@ -222,24 +226,28 @@ public class Excavation
 			// and local max + current row and determining the max 
 			localMax = Integer.max(oneRow.get(i), localMax + oneRow.get(i));
 
-			// only change tempLeft if starting the new max from oneRow[i]
-			if (oneRow.get(i) == localMax) 
+			// only change tempLeft if starting the new max from oneRow[i] & not at the end
+			if (oneRow.get(i) == localMax && i != oneRow.size() - 1) 
 			{
-				tempLeft = i;
-				tempRight = i;
+				localTempLeft = i;
+				localTempRight = i;
 			}
 
 			// change tempRight every iteration to update the new window
 			else 
-				tempRight = i;
+				localTempRight = i;
 
 			if (localMax > globalMax)
-				globalMax = localMax;
+				{
+					globalMax = localMax;
+					globalTempLeft = localTempLeft;
+					globalTempRight = localTempRight;
+				}
 		}
 
 		// return globalMax to get the max sum
 		_maxes.add(globalMax);
-		return new Point(tempLeft, tempRight);
+		return new Point(globalTempLeft, globalTempRight);
 	}
 
 	/**
@@ -339,6 +347,165 @@ public class Excavation
 		return row;
 	}
 
+
+	/**
+	 * Rotate the shape (parameter) 90 degrees 
+	 * @param oneShape
+	 * 								= the 2D array representing a shape to be rotated 
+	 * @return
+	 * 				= the 90 degree rotation of oneShape
+	 */
+	public static ArrayList<ArrayList<Integer>> rotate90Degrees(ArrayList<ArrayList<Integer>> oneShape)
+	{
+		// rows of new matrix = columns of original matrix
+		int rowsOfNewMatrix = oneShape.get(0).size(); 
+		// cols of new matrix = rows of original matrix
+		int colsOfNewMatrix = oneShape.size();  		 
+
+		ArrayList<ArrayList<Integer>> rotatedMatrix = new ArrayList<ArrayList<Integer>>();
+
+
+		for (int i = 0; i < colsOfNewMatrix; i++)
+		{
+			for(int j = 0; j < rowsOfNewMatrix; j++)
+			{
+				if (i == 0)
+				{
+					rotatedMatrix.add(new ArrayList<Integer>(Arrays.asList(new Integer[colsOfNewMatrix])));
+				}
+
+				int c = oneShape.get(i).get(j);				
+				rotatedMatrix.get(j).set(colsOfNewMatrix - (i + 1), c);
+			}
+		}
+
+
+		return rotatedMatrix;
+	}
+
+	/**
+	 * Transforms the parameter matrix to its transpose
+	 * @param _inputArr = the original array from input file
+	 */
+	public static void toTranspose(ArrayList<ArrayList<Integer>> _inputArr)
+	{			
+		int temp = 0;
+		
+		for (int i = 0; i < _inputArr.size(); i++)
+		{
+			for (int j = i + 1; j < _inputArr.get(i).size(); j++)
+			{
+				temp = _inputArr.get(i).get(j);
+				_inputArr.get(i).set(j, _inputArr.get(j).get(i));
+				_inputArr.get(j).set(i, temp);
+			}
+		}
+		
+	}
+	
+	public static void randomSort(Point _temp, ArrayList<PointObj> _pObjArr)
+	{
+		// holds the points
+				//ArrayList<PointObj> _pObjArr= new ArrayList<PointObj>();
+				//Point _temp = new Point(0,0);
+				Random rand = new Random();
+				boolean done = false;
+				int rNum = -1;
+				int upperB = 0;
+				int lowerB = 0;
+				
+		// sort as you insert
+					if (_pObjArr.isEmpty() == false)
+					{
+						upperB = _pObjArr.size();
+						lowerB = 0;
+						while (done == false)
+						{
+							// random num between 0 - size of arrayList
+							rNum = rand.nextInt(upperB) + lowerB; 
+
+							if (rNum > _pObjArr.size() - 1)
+								rNum = upperB - 1;
+
+							if (_pObjArr.get(rNum).aPoint.compareTo(_temp) == 0)
+							{
+								_pObjArr.get(rNum).hits += 1;
+								break;
+							}
+
+							// aPoint < temp ?
+							else if (_pObjArr.get(rNum).aPoint.compareTo(_temp) == -1 )
+							{
+								// search greater than rNum but less than upperB
+								lowerB = rNum + 1;
+								rNum = rand.nextInt(upperB) + lowerB;
+
+							}
+
+							// aPoint > temp ?
+							else if (_pObjArr.get(rNum).aPoint.compareTo(_temp) == 1)
+							{
+								// search less than rNum but greater than lowerB
+								upperB = rNum;
+								
+								if (upperB != 0)
+								rNum = rand.nextInt(upperB) + lowerB;
+							}
+
+							if (upperB == lowerB)
+							{
+								if (rNum > _pObjArr.size())
+									rNum = _pObjArr.size();
+
+								_pObjArr.add(rNum, new PointObj(_temp, 1));
+								break;
+							}
+
+							else if (upperB < lowerB)
+							{
+								System.out.print("Error %d");
+							}
+
+						}
+					}
+
+					else // empty
+					{
+						_pObjArr.add(new PointObj(_temp, 1));
+					}
+	}
+	
+	
+	/**
+	 * Determines the PointObj that has the most hits in the parameter
+	 * @param _pObjArr = an arrayList holding a Point representing the
+	 * 								  a possible window arrangement and the other 
+	 * 								  parameter representing how many rows that 
+	 * 								  arrangement was optimal for 
+	 * 								 Form: (Point windowArrangement, int hits)
+	 * @return
+	 * 				= A point that holds the window arrangement w/ the most occurrences
+	 * 					AKA the most optimal window arrangement
+	 */
+	public static Point mostOccurrences(ArrayList<PointObj> _pObjArr)
+	{
+		// find PointObj that appeared most
+				Point most = new Point(-1, -1); // (index, hits) index of pObjArr that holds the window
+				for (int i = 0; i < _pObjArr.size(); i++)
+				{
+					if (_pObjArr.get(i).hits > most.y)
+					{
+						// update most if found more hits
+						most.x = i;
+						most.y = _pObjArr.get(i).hits;
+					}
+				}
+
+				// temp now holds window
+				return _pObjArr.get(most.x).aPoint.iPoint;
+	}
+	
+	
 	public static void main(String[] args)
 	{
 		// array to hold the contents of the input file
@@ -353,6 +520,7 @@ public class Excavation
 		// holds the points
 		ArrayList<PointObj> pObjArr= new ArrayList<PointObj>();
 		Point temp = new Point(0,0);
+		Point temp2 = new Point(0,0);
 		int findIndex = -10;
 
 		// populate inputArr
@@ -373,117 +541,59 @@ public class Excavation
 		for (int i = 0; i < n; i++)
 		{
 			temp = findLargestWindowLR(inputArr.get(i), maxes);
-			//			findIndex = pObjArr.indexOf(temp);
-			//
-			//			// if temp already exists in pObjArr
-			//			if ( findIndex != - 1)
-			//				pObjArr.add(new PointObj(temp, pObjArr.get(findIndex).hits++));
-			//
-			//			else
-			//				pObjArr.add(new PointObj(temp, 1));
+			
+			// for output
+			System.out.println(i + ": " + temp + ", " + maxes.get(i));
 
-
-			// sort as you insert
-			if (pObjArr.isEmpty() == false)
-			{
-				upperB = pObjArr.size();
-				lowerB = 0;
-				while (done == false)
-				{
-					// random num between 0 - size of arrayList
-					rNum = rand.nextInt(upperB) + lowerB; 
-
-					if (rNum > pObjArr.size() - 1)
-						rNum = upperB - 1;
-
-					if (pObjArr.get(rNum).aPoint.compareTo(temp) == 0)
-					{
-						pObjArr.get(rNum).hits += 1;
-						break;
-					}
-
-					// aPoint < temp ?
-					else if (pObjArr.get(rNum).aPoint.compareTo(temp) == -1 )
-					{
-						// search greater than rNum but less than upperB
-						lowerB = rNum + 1;
-						rNum = rand.nextInt(upperB) + lowerB;
-
-					}
-
-					// aPoint > temp ?
-					else if (pObjArr.get(rNum).aPoint.compareTo(temp) == 1)
-					{
-						// search less than rNum but greater than lowerB
-						upperB = rNum;
-						rNum = rand.nextInt(upperB) + lowerB;
-					}
-
-					if (upperB == lowerB)
-					{
-						if (rNum > pObjArr.size())
-							rNum = pObjArr.size();
-
-						pObjArr.add(rNum, new PointObj(temp, 1));
-						break;
-					}
-
-					else if (upperB < lowerB)
-					{
-						System.out.print("Error %d");
-					}
-
-				}
-			}
-
-			else // empty
-			{
-				pObjArr.add(new PointObj(temp, 1));
-			}
+			// random sort = commented portion down below which sorts as you insert
+			randomSort(temp, pObjArr);
 		}
-
-		// find PointObj that appeared most
-		Point most = new Point(-1, -1); // (index, hits) index of pObjArr that holds the window
-		for (int i = 0; i < pObjArr.size(); i++)
-		{
-			if (pObjArr.get(i).hits > most.y)
-			{
-				// update most if found more hits
-				most.x = i;
-				most.y = pObjArr.get(i).hits;
-			}
-		}
-
-		// temp now holds window
-		temp = pObjArr.get(most.x).aPoint.iPoint;
-		//findLargestWindowLR(inputArr.get(index));
+			temp = mostOccurrences(pObjArr);
+			
 
 		// STEP 2
 		// then run through every length (distance between top and bottom) of the 
 		// (distance between left and right) I found above
-		// calculate the 
-		//		for (int i = 0; i < n; i++)
-		//		{
-		//				//System.out.println(findLargestWindowLR(inputArr.get(i)));
-		//				//System.out.println(maxes.add(findLargestSum(inputArr.get(i))));
-		//				// ALREADY HAVE THE left and right window so try all possible top and bottom values
-		//				//inputArr.get(temp.x)
-		//			
-		//			
-		//		}
 
-		// calculate sum between optimal window left to right
-		int sum = 0;
-		for (int j = 0; j < n; j++)
-		{
-			for (int i = temp.x; i <= temp.y; i++)
+		// shave off the part that is already not optimal (left to right)
+		// cut off the beginning if necessary
+			
+			// update to row size
+			n = inputArr.size();
+			for (int iCol = 0; iCol < temp.x; iCol++)
 			{
-				sum += inputArr.get(j).get(i);
+				// for every row jRow eliminate column iCol + 1
+				for (int jRow = 0; jRow < n - 1; jRow++)
+					inputArr.get(jRow).remove(iCol);
 			}
-			maxesWindow.add(sum);
-		}
+			
+			//update to col size
+			n = inputArr.get(0).size();
+			// cut off the end if necessary
+			for (int iCol = temp.y; iCol < n - 1; iCol++)
+			{
+				// for every row jRow eliminate column iCol + 1
+				for (int jRow = 0; jRow < inputArr.size(); jRow++)
+					inputArr.get(jRow).remove(iCol);
+			}
 
-		findLargestWindowTB(temp, inputArr);
+		// rotate 90 degrees and call findLargestWindow again
+			toTranspose(inputArr);
+		ArrayList<ArrayList<Integer>> rotatedInputArr = inputArr;
+				//rotate90Degrees(inputArr);
+	//	rotatedInputArr = rotate90Degrees(rotatedInputArr);
+	//	rotatedInputArr = rotate90Degrees(rotatedInputArr);
+		// get rid of extra rows
+		pObjArr.clear();
+		for (int i = 0; i < n; i++)		
+		{
+			temp2 = findLargestWindowLR(rotatedInputArr.get(i), maxes);
+
+			// random sort = commented portion down below which sorts as you insert
+			randomSort(temp2, pObjArr);
+		}
+			temp2 = mostOccurrences(pObjArr);
+		//findLargestWindowTB(temp, inputArr);
 	}
 
 }
