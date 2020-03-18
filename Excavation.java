@@ -2,13 +2,12 @@ import java.awt.Point;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Random;
 import java.util.Scanner;
 
 /**
- * 
+ * Program to determine the most optimal
+ * rectangle for generating the largest sum
+ * of integers from a given input file
  * @author Deron Washington II
  *
  */
@@ -138,8 +137,10 @@ public class Excavation
 			fnf.printStackTrace();
 			System.out.println("The output file could not be found.");
 		}
-
-		pWriter.close();
+		finally
+		{	
+			pWriter.close();
+		}
 	}
 
 	/**
@@ -190,15 +191,15 @@ public class Excavation
 
 	public static void main(String[] args)
 	{
-		final long startTime = System.currentTimeMillis();
+		//final long startTime = System.currentTimeMillis();
 		
 		int [][] inputArr = null;
 		Point[] optimalWindow = readInputFile(inputArr);
 		writeToOutputFile(optimalWindow[0], optimalWindow[1]);
 		
-		final long endTime = System.currentTimeMillis();
+		//final long endTime = System.currentTimeMillis();
 
-		System.out.println("Total execution time: " + (endTime - startTime));
+		//System.out.println("Total execution time: " + (endTime - startTime));
 
 	}
 
