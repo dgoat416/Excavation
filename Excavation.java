@@ -122,7 +122,7 @@ public class Excavation
 	 */
 	public static void readInputFile(ArrayList<ArrayList<Integer>> _inputArr)
 	{
-		File inFile = new File("input.txt");
+		File inFile = new File("input (2).txt");
 		int iRow = 0;
 		int endingIndex = 0;
 		String oneLine = "";
@@ -414,24 +414,45 @@ public class Excavation
 		return rotatedMatrix;
 	}
 
+	
 	/**
 	 * Transforms the parameter matrix to its transpose
 	 * @param _inputArr = the original array from input file
+	 * @return 
+	 * 				= the transpose of the original Matrix
 	 */
-	public static void toTranspose(ArrayList<ArrayList<Integer>> _inputArr)
+	public static ArrayList<ArrayList<Integer>> toTranspose(ArrayList<ArrayList<Integer>> _inputArr)
 	{			
-		int temp = 0;
+		ArrayList<ArrayList<Integer>> rotatedArr = new ArrayList<ArrayList<Integer>>();
+		//int temp = 0;
 
-		for (int i = 0; i < _inputArr.size(); i++)
+//		// works for square matrix & uses same arrayList (no extra space)
+//		for (int i = 0; i < _inputArr.size(); i++)
+//		{
+//			for (int j = i + 1; j < _inputArr.get(i).size(); j++)
+//			{
+//				temp = _inputArr.get(i).get(j);
+//				_inputArr.get(i).set(j, _inputArr.get(j).get(i));
+//				_inputArr.get(j).set(i, temp);
+//			}
+//		}
+		
+		// works for any square or rectangular matrix
+		for (int ogRow = 0; ogRow < _inputArr.size(); ogRow++)
 		{
-			for (int j = i + 1; j < _inputArr.get(i).size(); j++)
+			for (int ogCol = 0; ogCol < _inputArr.get(ogRow).size(); ogCol++)
 			{
-				temp = _inputArr.get(i).get(j);
-				_inputArr.get(i).set(j, _inputArr.get(j).get(i));
-				_inputArr.get(j).set(i, temp);
+				// instantiate a new row for as many columns as the original matrix
+				if (ogRow == 0)
+					rotatedArr.add(new ArrayList<Integer>());
+				
+				// for each ogCol (or row of rotatedArr) add the 
+				// corresponding value of the transpose
+				rotatedArr.get(ogCol).add(ogRow, _inputArr.get(ogRow).get(ogCol));
 			}
 		}
-
+		
+		return rotatedArr;
 	}
 
 	/**
@@ -599,12 +620,13 @@ public class Excavation
 		return _pObjArr.get(most.x).aPoint.iPoint;
 	}
 
-
+	
 	public static void main(String[] args)
 	{
 		// array to hold the contents of the input file
 		ArrayList<ArrayList<Integer>> inputArr = new ArrayList<ArrayList<Integer>>();
 
+		
 		// holds the points
 		Point leftRightWindow = new Point(0,0);
 		Point topBottomWindow = new Point(0,0);
@@ -642,36 +664,53 @@ public class Excavation
 		// the sub array/list  and report the top and bottom
 		// window that has the largest sum
 
+		
 		// shave off the part that is already not optimal (left to right)
 		
-		// 2A. CUT OFF THE BEGINNING IF NECESSARY 
-		for (int iRow = 0; iRow < leftRightWindow.x; iRow++)
+		// 2A. CUT OFF THE BEGINNING OF ROWS 
+		// (MEANING COLS AT THE BEGINNING OF THE ROWS) IF NECESSARY 
+		
+		// TESTING PURPOSES
+		//leftRightWindow.
+		// END TESTING
+		
+		// delete temp.x - 0 rows for first loop
+		// delete rowsize - tempWindow.y rows for second loop
+		Point tempWindow = leftRightWindow;
+		tempWindow = new Point(leftRightWindow.x, (inputArr.get(0).size() - 1 ) - leftRightWindow.y);
+		
+		for (int iCol = 0; iCol < tempWindow.x; iCol++)
 		{
-			// cut off the beginning if necessary
-			inputArr.remove(0);
+			// cut off the beginning columns of jRow if necessary
+			for (int jRow = 0; jRow < inputArr.size(); jRow++)
+				inputArr.get(jRow).remove(0);
 		}
 
-		// 2B. CUT OFF THE END IF NECESSARY
-		for (int iCol = leftRightWindow.y + 1; iCol < inputArr.get(0).size(); iCol++)
+		// 2B. CUT OFF THE END OF THE ROWS 
+		// MEANING CUT OFF THE COLS AT THE END OF THE ROWS
+		// IF NECESSARY
+		for (int iCol = 0; iCol < tempWindow.y; iCol++)
 		{
+			int iColMax = inputArr.get(0).size() - 1;
 			// for every row jRow eliminate column iCol
 			for (int jRow = 0; jRow < inputArr.size(); jRow++)
-				inputArr.get(jRow).remove(iCol);
+				inputArr.get(jRow).remove(iColMax);
 		}
 
 		// 2C. FIND THE TRANSPOSE AND FIND THE OPTIMAL WINDOW
 		// FOR THE TRANSPOSE (WHICH WILL BE TOP AND BOTTOM WINDOW)
-		toTranspose(inputArr);
+		ArrayList<ArrayList<Integer>> transpose = new ArrayList<ArrayList<Integer>>();
+		transpose = toTranspose(inputArr);
 		
 		// reset all necessary containers & variables
 		oneRowSum = 0;
 		sums.clear();
 
 		// get the sum for every row of the transpose (essentially top and bottom)
-		for (int i = 0; i < n; i++)
+		for (int i = 0; i < transpose.size(); i++)
 		{
-			for (int j = 0; j < n; j++)
-				oneRowSum += inputArr.get(i).get(j);
+			for (int j = 0; j < transpose.get(i).size(); j++)
+				oneRowSum += transpose.get(i).get(j);
 			
 			// add to the list of sums of each row and reset oneRowSum 
 			sums.add(oneRowSum);
