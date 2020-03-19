@@ -17,15 +17,10 @@ public class Excavation
 	 * Read input file and populate the input array
 	 * @param _inputArr = 2d array to hold the contents of the input file
 	 * @return
-	 * 				= an array of point variables 
-	 * 					[0] = the optimal left-right window
-	 * 					[1] = the optimal top-bottom window
+	 * 				= the populated array
 	 */
-	public static Point[] readInputFile(int[][] _inputArr)
+	public static int[][] readInputFile(int[][] _inputArr)
 	{
-		int[] colSums = null;
-		int[] rowSums = null;
-		Point[] optimalWindows = new Point[2];
 		int currInt = 0;
 		File inFile = new File("input.txt");
 		Scanner scan = null;
@@ -34,12 +29,10 @@ public class Excavation
 		{
 			scan = new Scanner(inFile);
 			final int N = scan.nextInt();
-			
+
 			// declare arrays since we now know the size
 			_inputArr = new int[N][N];
-			colSums = new int[N];
-			rowSums = new int[N];
-			
+
 			// compute the sums of rows and cols as the input is read
 			for (int iRow = 0; iRow < N; iRow++)
 			{
@@ -48,52 +41,9 @@ public class Excavation
 					// store current integer value in array
 					currInt = scan.nextInt();
 					_inputArr[iRow][iCol] = currInt;
-					
-					// compute sum for row 
-					rowSums[iRow] += currInt;
-					
-					// compute col sum
-					colSums[iCol] += currInt;
-				}					
+				}		
+
 			}
-			
-			// get left-right optimal window
-			Point leftRightWindow = findOptimalWindow(rowSums);
-			Point topBottomWindow = new Point(0,0);
-			
-			// 2A. REDEFINE THE COL SUMS ARRAY BASED ON 
-			// THE OPTIMAL ROW WINDOW IF NECESSARY
-			
-			// this is how big to make the array of colSums after the 
-			// optimalWindow for left to right is found
-			int colSumsLength = (leftRightWindow.y - leftRightWindow.x) + 1;
-	
-			// no need for new array because it is the same array
-			if (colSumsLength == colSums.length)
-				topBottomWindow = findOptimalWindow(colSums);
-			
-			// create and populate new array
-			else
-			{
-				int[] newColSums = new int[colSumsLength];
-				int index = leftRightWindow.x;
-				
-				// populate new array
-				for (int iRow = 0; iRow < colSumsLength; iRow++)
-				{
-					newColSums[iRow] = colSums[index];
-					
-					//update
-					index++;
-				}
-				
-				// get top-bottom optimal window
-				topBottomWindow = findOptimalWindow(newColSums);
-			}
-			
-			// store the optimalWindow Rectangle coordinates
-			optimalWindows[0] = leftRightWindow;
-			optimalWindows[1] = topBottomWindow;
 		}
 		catch(FileNotFoundException FNF)
 		{
@@ -104,10 +54,10 @@ public class Excavation
 		{
 			scan.close();
 		}
-		
-		return optimalWindows;
+
+		return _inputArr;
 	}
-	
+
 	/**
 	 * Write output file 
 	 * @param _leftRightWindow = optimal left and right window
@@ -129,8 +79,11 @@ public class Excavation
 			_topBottomWindow.y = _topBottomWindow.y + temp.y;
 
 
-			pWriter.write(_leftRightWindow.x + " " + _topBottomWindow.x + "\n");
-			pWriter.write(_leftRightWindow.y + " " + _topBottomWindow.y + "\n");
+			//pWriter.write(_leftRightWindow.x + " " + _topBottomWindow.x + "\n");
+			//pWriter.write(_leftRightWindow.y + " " + _topBottomWindow.y + "\n");
+			
+			pWriter.write(_topBottomWindow.x + " " + _leftRightWindow.x + "\n");
+			pWriter.write(_topBottomWindow.y + " " + _leftRightWindow.y + "\n");
 		}
 		catch (FileNotFoundException fnf)
 		{
@@ -144,62 +97,82 @@ public class Excavation
 	}
 
 	/**
-	 * Find the window that holds the largestSum between left and right
-	 * @param oneRow = the row with the largest size
+	 * Find the optimal rectangle to house the largest sum
+	 * @param _inputArr = 2d input array
 	 * @return
-	 * 				=  point that holds the size of the window that maximizes sum between
-	 *	 				left side of window(first coordinate) of oneRow
-	 *	 				right side of window(second coordinate) of oneRow
+	 * 				= an array of point variables 
+	 * 					[0] = the optimal left-right window
+	 * 					[1] = the optimal top-bottom window
 	 */
-	public static Point findOptimalWindow(int[] oneRow)
-	{		
-		int localMax = 0;
-		int globalMax = Integer.MIN_VALUE;
-		int localTempLeft = 0;
-		int localTempRight = 0;
-		int globalTempLeft = 0;
-		int globalTempRight = 0;
+	private static Point[] findOptimalRectangle(int [][] _inputArr) 
+	{ 
+		int n = _inputArr.length;  
+		
+		// houses the total sum at current row (increasing by column)
+		int totalSumCurrRow[][] = new int[n+1][n]; 
 
-		for(int i = 0; i < oneRow.length; i++)
-		{
-			// find local max by comparing the current row 
-			// and local max + current row and determining the max 
-			localMax = Integer.max(oneRow[i], localMax + oneRow[i]);
+		// get the sums as you go down row by row 
+		// each row is a sum of the rows above it
+		// use these later to find the maximum sum by 
+		// eliminating and adding rows and then finding out which
+		// ones create the largest sum
+		for(int i = 0; i < n; i++) 
+		{ 
+			for(int j = 0; j < n; j++) 
+			{ 
+				totalSumCurrRow[i+1][j] = totalSumCurrRow[i][j] + _inputArr[i][j]; 
+			} 
+		} 
 
-			// only change tempLeft if starting the new max from oneRow[i] & not at the end
-			if (oneRow[i] == localMax && i != oneRow.length - 1) 
-			{
-				localTempLeft = i;
-				localTempRight = i;
-			}
+		int globalSum = -999; 
+		int localSum = 0; 
+		int top = 0;
+		int bottom = 0;
+		int left = 0;
+		int right = 0; 
+		int curColStart = 0; 
+		
+		// try every combination and track the sum using the array created above
+		for(int rowStart = 0; rowStart < n; rowStart++) 
+		{ 
+			for(int row = rowStart; row < n; row++)
+			{ 
+				// reinitialize
+				localSum = 0; 
+				curColStart = 0; 
+				
+				for(int col = 0; col < n; col++) 
+				{ 
+					localSum += totalSumCurrRow[row+1][col] - totalSumCurrRow[rowStart][col]; 
+					
+					// update globalSum if the localSum is greater
+					if(globalSum < localSum) 
+					{ 
+						globalSum = localSum; 
+						top = rowStart; 
+						bottom = row; 
+						left = curColStart; 
+						right = col; 
+					} 
+				} 
+			} 
+		} 
 
-			// change tempRight every iteration to update the new window
-			else 
-				localTempRight = i;
-
-			if (localMax > globalMax)
-			{
-				globalMax = localMax;
-				globalTempLeft = localTempLeft;
-				globalTempRight = localTempRight;
-			}
-		}
-
-		return new Point(globalTempLeft, globalTempRight);
-	}
-
+		Point[] optimalRectangle = new Point[2];
+		optimalRectangle[0] = new Point(left, right);
+		optimalRectangle[1] = new Point(top, bottom);
+		
+		return optimalRectangle; 
+	} 
 
 	public static void main(String[] args)
 	{
-		//final long startTime = System.currentTimeMillis();
 		
 		int [][] inputArr = null;
-		Point[] optimalWindow = readInputFile(inputArr);
+		inputArr = readInputFile(inputArr);
+		Point[] optimalWindow = null;
+		optimalWindow = findOptimalRectangle(inputArr);
 		writeToOutputFile(optimalWindow[0], optimalWindow[1]);
-		
-		//final long endTime = System.currentTimeMillis();
-
-		//System.out.println("Total execution time: " + (endTime - startTime));
 
 	}
 
